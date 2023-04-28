@@ -66,7 +66,7 @@ function saveCity() {
 }
 
 
-function createTodayForcast(today) {
+function createTodayForecast(today) {
     var timeNow = dayjs().format("MM/DD/YYYY");
     var todayCardEl = document.createElement('div');
     todayCardEl.setAttribute('class', 'card today w-75 position-absolute top-0 end-0 mt-3 me-3');
@@ -188,10 +188,11 @@ document.getElementById('search-btn').addEventListener('click', function(e) {
 
     // createCityBtn();
     // saveCity();
+
     // currently there may be a problem with the searchCity function which is causing the .then promise to not be read properly
     searchCity(inputEl.value).then(function(today) {
             createTodayForecast(today);
-        });
+    });
 });
 
     useCurrentCity();
