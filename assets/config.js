@@ -7,80 +7,26 @@ var forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast?lat=38.97&lo
 
 var geoLocatorUrl = 'http://api.openweathermap.org/geo/1.0/direct?q=Lawrence&limit=5&appid=75e4abf9f355e747fc2ff2fafa75a075'
 
+var APIKey = '75e4abf9f355e747fc2ff2fafa75a075'
 
 
-fetch(weatherUrl)
-    .then(function(res){
-        if(!res.ok) throw new Error ('Oooops');
-
-        return res.json();
-    })
-    .then(function(data) {
-        
-        console.log('data :>>', data);
-
-    })
-    .catch(function(error) {
-        console.log(error);
-    });
-
-fetch(forecastUrl)
-    .then(function(res){
-        if(!res.ok) throw new Error ('Oooops');
-
-        return res.json();
-    })
-    .then(function(data) {
-        
-        console.log('data :>>', data);
-
-        // renderFiveDayForecast(data);
-    })
-    .catch(function(error) {
-        console.log(error);
-    });
-
-fetch(geoLocatorUrl)
-    .then(function(res) {
-        if(!res.ok) throw new Error ('Oooops');
-
-        return res.json();
-    })
-    .then(function(data) {
-        console.log('data :>>', data);
-
-    })
-    .catch(function(error) {
-        console.log(error);
-    });
-
-
-// cannot get this part to work no matter what I try
-// ideally this would pull the lon and lat from the geolocator api
-// what's coming out are NaN values
-function locateLonLat() {
+// I have now switched the API URL that I'm using after reading some class documentation
+function searchCity(cityInput) {
     var inputEl = document.getElementById('search-term').value.trim();
-    var geoLocatorUrl = 'http://api.openweathermap.org/geo/1.0/direct?q=;' + 'Lawrence' + '&limit=5&appid=75e4abf9f355e747fc2ff2fafa75a075'
-    fetch(geoLocatorUrl)
+    var queryURL = "http://api.openweathermap.org/data/2.5/weather?q=" + cityInput + "&appid=" + APIKey;
+    fetch(queryURL)
         .then(function(res) {
             if(!res.ok) throw new Error ('Ooops');
 
             return res.json();
         })
         .then(function(data) {
-
-
-            var lat = parseFloat(data.lat);
-            var lon = parseFloat(data.lon);
-
-            lat = lat.toString();
-            lon = lon.toString();
-
-            console.log(data.lat, data.lon);
-
-
+            createTodayForcast(data);
         });
 }
+
+searchCity();
+
 // acquire city from local storage function
 function useCurrentCity() {
     var currentCity = JSON.parse(localStorage.getItem('cityList'));
@@ -109,8 +55,6 @@ function saveCity() {
         return;
     }
 }
-
-locateLonLat();
 
 
 function createTodayForcast(today) {
@@ -223,6 +167,11 @@ function createCityBtn() {
 
     cityListBodyEl.append(cityBtnEl);
 }
+
+cityListBodyEl.on('click', 'btn', function(e) {
+    var textContent = this.textContent;
+    console.log(textContent);
+})
 
 function searchCity() {
     var forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast?lat=38.97&lon=-95.23&appid=75e4abf9f355e747fc2ff2fafa75a075'
