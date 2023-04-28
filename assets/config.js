@@ -1,18 +1,10 @@
-// var weatherUrl = 'https://api.openweathermap.org/data/3.0/onecall?lat=51.50&lon=-0.12&exclude=minutely,alerts&appid=75e4abf9f355e747fc2ff2fafa75a075'
-
-var weatherUrl = 'https://api.openweathermap.org/data/2.5/weather?lat=38.97&lon=-95.23&appid=75e4abf9f355e747fc2ff2fafa75a075'
-
-var forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast?lat=38.97&lon=-95.23&appid=75e4abf9f355e747fc2ff2fafa75a075'
-
-
-var geoLocatorUrl = 'http://api.openweathermap.org/geo/1.0/direct?q=Lawrence&limit=5&appid=75e4abf9f355e747fc2ff2fafa75a075'
-
 var APIKey = '75e4abf9f355e747fc2ff2fafa75a075'
+
+var cityPlaceholder = 'Lawrence'
 
 
 // I have now switched the API URL that I'm using after reading some class documentation
 function searchCity(cityInput) {
-    var inputEl = document.getElementById('search-term').value.trim();
     var queryURL = "http://api.openweathermap.org/data/2.5/weather?q=" + cityInput + "&appid=" + APIKey;
     fetch(queryURL)
         .then(function(res) {
@@ -21,11 +13,28 @@ function searchCity(cityInput) {
             return res.json();
         })
         .then(function(data) {
-            createTodayForcast(data);
-        });
+            return data;
+        })
+        .catch(function(error) {
+            console.error(error);
+        })
 }
 
-searchCity();
+// future task will be to use the queryURL to pull the lon and lat from a search
+
+var queryURL = "http://api.openweathermap.org/data/2.5/weather?q=" + cityPlaceholder + "&appid=" + APIKey;
+fetch(queryURL)
+    .then(function(res) {
+        if(!res.ok) throw new Error ('Oooops');
+
+        return res.json();
+    })
+    .then(function(data) {
+        console.log('data :>>', data);
+    })
+    .catch(function(error) {
+        console.error(error);
+    })
 
 // acquire city from local storage function
 function useCurrentCity() {
@@ -58,7 +67,7 @@ function saveCity() {
 
 
 function createTodayForcast(today) {
-    var timeNow = moment().format("l");
+    var timeNow = dayjs().format("MM/DD/YYYY");
     var todayCardEl = document.createElement('div');
     todayCardEl.setAttribute('class', 'card today w-75 position-absolute top-0 end-0 mt-3 me-3');
 
@@ -67,7 +76,7 @@ function createTodayForcast(today) {
 
     var todayHeading = document.createElement('h5');
     todayHeading.setAttribute('class', 'card-title');
-    todayHeading.textContent = today.name + timeNow + today.weather.icon;
+    todayHeading.textContent = today.name + timeNow + today.weather[0].icon;
 
     var todayTemp = document.createElement('p');
     todayTemp.setAttribute('class', 'card-text');
@@ -79,7 +88,7 @@ function createTodayForcast(today) {
 
     var todayHumidity = document.createElement('p');
     todayHumidity.setAttribute('class', 'card-text');
-    todayTemp.textContent = 'Humidity: ' + today.main.humidity;
+    todayTemp.textContent = 'Feels like: ' + today.main.feels_like;
 
     todayCardBody.append(todayHeading, todayTemp, todayWind, todayHeading);
 
@@ -114,6 +123,8 @@ function createFiveDayForecastContainer() {
     return fiveDayWrapper;
 }
 
+createFiveDayForecastContainer();
+
 function createFiveDayForecastCard(day) {
     var fiveDayCardEl = document.createElement('div');
     fiveDayCardEl.setAttribute('class', 'col');
@@ -145,6 +156,7 @@ function createFiveDayForecastCard(day) {
 }
 
 function renderFiveDayForecast(days) {
+
     // loop over days
     for(var i = 0; i < 5; i++) {
         // create day cards
@@ -168,57 +180,18 @@ function createCityBtn() {
     cityListBodyEl.append(cityBtnEl);
 }
 
-cityListBodyEl.on('click', 'btn', function(e) {
-    var textContent = this.textContent;
-    console.log(textContent);
-})
-
-function searchCity() {
-    var forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast?lat=38.97&lon=-95.23&appid=75e4abf9f355e747fc2ff2fafa75a075'
-
-    var weatherUrl = 'https://api.openweathermap.org/data/2.5/weather?lat=38.97&lon=-95.23&appid=75e4abf9f355e747fc2ff2fafa75a075'
-
-    fetch(forecastUrl)
-    .then(function(res) {
-        if (!res.ok) throw new Error('oops')
-        return res.json();
-    })
-    .then(function(data) {
-        console.log('results :>> ', data);
-        renderFiveDayForecast(data);
-    })
-    .catch(function(error) {
-        console.log(error);
-    });   
-
-    fetch(weatherUrl)
-    .then(function(res) {
-        if (!res.ok) throw new Error('oops')
-        return res.json();
-    })
-    .then(function(data) {
-        console.log('results :>> ', data);
-        createTodayForcast(data);
-    })
-    .catch(function(error) {
-        console.log(error);
-    });   
-}
-
 document.getElementById('search-btn').addEventListener('click', function(e) {
     e.preventDefault();
     var inputEl = document.getElementById('search-term');
 
     if (!inputEl.value.trim()) return;
 
-    createCityBtn();
-    saveCity();
-    searchCity();
-
-
-    // fetchFiveDayForecastResults(inputEl.value).then(function(days) {
-    //     renderFiveDayForecast(days);
-    // });
+    // createCityBtn();
+    // saveCity();
+    // currently there may be a problem with the searchCity function which is causing the .then promise to not be read properly
+    searchCity(inputEl.value).then(function(today) {
+            createTodayForecast(today);
+        });
 });
 
     useCurrentCity();
