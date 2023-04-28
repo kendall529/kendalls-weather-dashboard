@@ -7,6 +7,8 @@ var forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast?lat=38.97&lo
 
 var geoLocatorUrl = 'http://api.openweathermap.org/geo/1.0/direct?q=Lawrence&limit=5&appid=75e4abf9f355e747fc2ff2fafa75a075'
 
+
+
 fetch(weatherUrl)
     .then(function(res){
         if(!res.ok) throw new Error ('Oooops');
@@ -17,9 +19,6 @@ fetch(weatherUrl)
         
         console.log('data :>>', data);
 
-        var dump = document.createElement('pre');
-        dump.textContent = JSON.stringify(data, null, 2);
-        document.body.appendChild(dump);
     })
     .catch(function(error) {
         console.log(error);
@@ -35,7 +34,7 @@ fetch(forecastUrl)
         
         console.log('data :>>', data);
 
-        renderFiveDayForecast(data);
+        // renderFiveDayForecast(data);
     })
     .catch(function(error) {
         console.log(error);
@@ -55,7 +54,67 @@ fetch(geoLocatorUrl)
         console.log(error);
     });
 
+
+// cannot get this part to work no matter what I try
+// ideally this would pull the lon and lat from the geolocator api
+// what's coming out are NaN values
+function locateLonLat() {
+    var inputEl = document.getElementById('search-term').value.trim();
+    var geoLocatorUrl = 'http://api.openweathermap.org/geo/1.0/direct?q=;' + 'Lawrence' + '&limit=5&appid=75e4abf9f355e747fc2ff2fafa75a075'
+    fetch(geoLocatorUrl)
+        .then(function(res) {
+            if(!res.ok) throw new Error ('Ooops');
+
+            return res.json();
+        })
+        .then(function(data) {
+
+
+            var lat = parseFloat(data.lat);
+            var lon = parseFloat(data.lon);
+
+            lat = lat.toString();
+            lon = lon.toString();
+
+            console.log(data.lat, data.lon);
+
+
+        });
+}
+// acquire city from local storage function
+function useCurrentCity() {
+    var currentCity = JSON.parse(localStorage.getItem('cityList'));
+
+    if (currentCity) {
+        cityList = currentCity;
+    } else {
+        cityList = [];
+    }
+}
+
+// store city to local storage
+function saveToLocalStorage() {
+    localStorage.setItem('currentCity', city);
+    cityList.push(city);
+    localStorage.setItem('cityList', JSON.stringify(cityList));
+}
+
+// function to take a city from the search and only store it in local storage if it wasn't previously listed
+function saveCity() {
+    city = document.getElementById('search-term');
+    if (!(city && cityList.includes(city))) {
+        saveToLocalStorage();
+        return city;
+    } else {
+        return;
+    }
+}
+
+locateLonLat();
+
+
 function createTodayForcast(today) {
+    var timeNow = moment().format("l");
     var todayCardEl = document.createElement('div');
     todayCardEl.setAttribute('class', 'card today w-75 position-absolute top-0 end-0 mt-3 me-3');
 
@@ -64,7 +123,7 @@ function createTodayForcast(today) {
 
     var todayHeading = document.createElement('h5');
     todayHeading.setAttribute('class', 'card-title');
-    todayHeading.textContent = today.name + today.dt + today.weather.icon;
+    todayHeading.textContent = today.name + timeNow + today.weather.icon;
 
     var todayTemp = document.createElement('p');
     todayTemp.setAttribute('class', 'card-text');
@@ -86,7 +145,7 @@ function createTodayForcast(today) {
     return todayCardEl;
 };
 
-function createFiveDayForcastContainer() {
+function createFiveDayForecastContainer() {
     var fiveDayWrapper = document.createElement('div');
     fiveDayWrapper.setAttribute('class', 'w-75 mt-4 float-end me-4');
 
@@ -151,32 +210,67 @@ function renderFiveDayForecast(days) {
     }
 }
 
-function fetchFiveDayForecastResults(city) {
-    var forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast?lat=';
-    var API_KEY = '&appid=75e4abf9f355e747fc2ff2fafa75a075'
 
-    return fetch(forecastUrl +  + '&lon=' +  + API_KEY);
-    .then(function (res) {
-        if (!res.ok) throw new Error('Ooops');
+// create a button from already searched cities
+function createCityBtn() {
+    var inputEl = document.getElementById('search-term');
+    var cityListBodyEl = document.getElementById('city-list')
+    var cityBtnEl = document.createElement('button');
+    cityBtnEl.setAttribute('class', 'btn bg-secondary-subtle w-100 mt-3');
+    cityBtnEl.textContent = inputEl.value;
 
-        console.log('res :>> ', res);
+    inputEl.value = '';
 
-        return res.json();
-      })
-      .then(function (data) {
-        return data;
-      })
-      .catch(function (error) {
-        console.error(error);
-      });
+    cityListBodyEl.append(cityBtnEl);
 }
 
-document.getElementById('search-btn').addEventListener('click', function() {
+function searchCity() {
+    var forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast?lat=38.97&lon=-95.23&appid=75e4abf9f355e747fc2ff2fafa75a075'
+
+    var weatherUrl = 'https://api.openweathermap.org/data/2.5/weather?lat=38.97&lon=-95.23&appid=75e4abf9f355e747fc2ff2fafa75a075'
+
+    fetch(forecastUrl)
+    .then(function(res) {
+        if (!res.ok) throw new Error('oops')
+        return res.json();
+    })
+    .then(function(data) {
+        console.log('results :>> ', data);
+        renderFiveDayForecast(data);
+    })
+    .catch(function(error) {
+        console.log(error);
+    });   
+
+    fetch(weatherUrl)
+    .then(function(res) {
+        if (!res.ok) throw new Error('oops')
+        return res.json();
+    })
+    .then(function(data) {
+        console.log('results :>> ', data);
+        createTodayForcast(data);
+    })
+    .catch(function(error) {
+        console.log(error);
+    });   
+}
+
+document.getElementById('search-btn').addEventListener('click', function(e) {
+    e.preventDefault();
     var inputEl = document.getElementById('search-term');
 
-    if (!inputEl.ariaValueMax.trim()) return;
+    if (!inputEl.value.trim()) return;
 
-    fetchFiveDayForecastResults(inputEl.value).then(function(days) {
-        renderFiveDayForecast(days);
-    });
+    createCityBtn();
+    saveCity();
+    searchCity();
+
+
+    // fetchFiveDayForecastResults(inputEl.value).then(function(days) {
+    //     renderFiveDayForecast(days);
+    // });
 });
+
+    useCurrentCity();
+
