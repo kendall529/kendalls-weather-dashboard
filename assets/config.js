@@ -2,39 +2,46 @@ var APIKey = '75e4abf9f355e747fc2ff2fafa75a075'
 
 var cityPlaceholder = 'Lawrence'
 
+https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={API key}
 
 // I have now switched the API URL that I'm using after reading some class documentation
 function searchCity(cityInput) {
-    var queryURL = "http://api.openweathermap.org/data/2.5/weather?q=" + cityInput + "&appid=" + APIKey;
+    var queryURL = "http://api.openweathermap.org/geo/1.0/direct?q=" + cityInput +  "&appid=" + APIKey;
     fetch(queryURL)
-        .then(function(res) {
+        .then(function (res) {
             if(!res.ok) throw new Error ('Ooops');
 
             return res.json();
         })
         .then(function(data) {
-            return data;
+            console.log('data :>>', data);
+            weatherSearch(data);
         })
         .catch(function(error) {
             console.error(error);
         })
 }
 
-// future task will be to use the queryURL to pull the lon and lat from a search
+function weatherSearch(data) {
+    var lat = data[0].lat;
+    var lon = data[0].lon;
 
-var queryURL = "http://api.openweathermap.org/data/2.5/weather?q=" + cityPlaceholder + "&appid=" + APIKey;
-fetch(queryURL)
-    .then(function(res) {
-        if(!res.ok) throw new Error ('Oooops');
+    var weatherURL = 'http://api.openweathermap.org/data/2.5/forecast?lat=' + lat + '&lon=' + lon + '&appid=' +  APIKey;
+    console.log(weatherURL);
+    fetch(weatherURL)
+        .then(function (res) {
+            if(!res.ok) throw new Error ('Ooops');
 
-        return res.json();
-    })
-    .then(function(data) {
-        console.log('data :>>', data);
-    })
-    .catch(function(error) {
-        console.error(error);
-    })
+            return res.json();
+       })
+       .then(function (data) {
+            console.log('data :>>', data);
+            createFiveDayForecastCard(data);
+       })
+       .catch(function (error) {
+            console.error(error);
+       })
+}
 
 // acquire city from local storage function
 function useCurrentCity() {
@@ -45,25 +52,7 @@ function useCurrentCity() {
     } else {
         cityList = [];
     }
-}
-
-// store city to local storage
-function saveToLocalStorage() {
-    localStorage.setItem('currentCity', city);
-    cityList.push(city);
-    localStorage.setItem('cityList', JSON.stringify(cityList));
-}
-
-// function to take a city from the search and only store it in local storage if it wasn't previously listed
-function saveCity() {
-    city = document.getElementById('search-term');
-    if (!(city && cityList.includes(city))) {
-        saveToLocalStorage();
-        return city;
-    } else {
-        return;
-    }
-}
+};
 
 
 function createTodayForecast(today) {
@@ -158,7 +147,7 @@ function createFiveDayForecastCard(day) {
 function renderFiveDayForecast(days) {
 
     // loop over days
-    for(var i = 0; i < 5; i++) {
+    for(var i = 1; i < 6; i++) {
         // create day cards
         var dayCard = createFiveDayForecastCard(days[i]);
         // append day cards to forecast container
@@ -190,9 +179,9 @@ document.getElementById('search-btn').addEventListener('click', function(e) {
     // saveCity();
 
     // currently there may be a problem with the searchCity function which is causing the .then promise to not be read properly
-    searchCity(inputEl.value).then(function(today) {
-            createTodayForecast(today);
-    });
+    searchCity(inputEl.value);
+    // createTodayForecast();
+    weatherSearch();
 });
 
     useCurrentCity();
