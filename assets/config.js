@@ -8,19 +8,21 @@ https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={API 
 function searchCity(cityInput) {
     var queryURL = "http://api.openweathermap.org/geo/1.0/direct?q=" + cityInput +  "&appid=" + APIKey;
     fetch(queryURL)
-        .then(function (res) {
+        .then(function(res) {
             if(!res.ok) throw new Error ('Ooops');
 
             return res.json();
         })
         .then(function(data) {
             console.log('data :>>', data);
-            weatherSearch(data);
+            if(data.length > 0) {
+                weatherSearch(data);
+            }
         })
         .catch(function(error) {
             console.error(error);
         })
-}
+};
 
 function weatherSearch(data) {
     var lat = data[0].lat;
@@ -29,34 +31,21 @@ function weatherSearch(data) {
     var weatherURL = 'http://api.openweathermap.org/data/2.5/forecast?lat=' + lat + '&lon=' + lon + '&appid=' +  APIKey;
     console.log(weatherURL);
     fetch(weatherURL)
-        .then(function (res) {
+        .then(function(res) {
             if(!res.ok) throw new Error ('Ooops');
 
             return res.json();
        })
-       .then(function (data) {
+       .then(function(data) {
             console.log('data :>>', data);
-            createFiveDayForecastCard(data);
+            renderFiveDayForecast(data);
        })
-       .catch(function (error) {
+       .catch(function(error) {
             console.error(error);
        })
-}
-
-// acquire city from local storage function
-function useCurrentCity() {
-    var currentCity = JSON.parse(localStorage.getItem('cityList'));
-
-    if (currentCity) {
-        cityList = currentCity;
-    } else {
-        cityList = [];
-    }
 };
 
-
 function createTodayForecast(today) {
-    var timeNow = dayjs().format("MM/DD/YYYY");
     var todayCardEl = document.createElement('div');
     todayCardEl.setAttribute('class', 'card today w-75 position-absolute top-0 end-0 mt-3 me-3');
 
@@ -65,21 +54,28 @@ function createTodayForecast(today) {
 
     var todayHeading = document.createElement('h5');
     todayHeading.setAttribute('class', 'card-title');
-    todayHeading.textContent = today.name + timeNow + today.weather[0].icon;
+    todayHeading.textContent = today.list[0].dt_txt;
+
+    var iconCode = today.list[0].weather[0].icon;
+
+    var iconURL = "http://openweathermap.org/img/w/" + iconCode + ".png";
+
+    var iconImg = document.createElement('img');
+    iconImg.src = iconURL;
 
     var todayTemp = document.createElement('p');
     todayTemp.setAttribute('class', 'card-text');
-    todayTemp.textContent = 'Temp: ' + today.main.temp;
+    todayTemp.textContent = 'Temp: ' + today.list[0].main.temp;
 
     var todayWind = document.createElement('p');
     todayWind.setAttribute('class', 'card-text');
-    todayTemp.textContent = 'Wind: ' + today.wind.speed;
+    todayWind.textContent = 'Wind: ' + today.list[0].wind.speed;
 
     var todayHumidity = document.createElement('p');
     todayHumidity.setAttribute('class', 'card-text');
-    todayTemp.textContent = 'Feels like: ' + today.main.feels_like;
+    todayHumidity.textContent = 'Feels like: ' + today.list[0].main.feels_like;
 
-    todayCardBody.append(todayHeading, todayTemp, todayWind, todayHeading);
+    todayCardBody.append(todayHeading, iconImg, todayTemp, todayWind, todayHumidity);
 
 
     todayCardEl.append(todayCardBody);
@@ -87,8 +83,10 @@ function createTodayForecast(today) {
     return todayCardEl;
 };
 
+var fiveDayWrapper;
+
 function createFiveDayForecastContainer() {
-    var fiveDayWrapper = document.createElement('div');
+    fiveDayWrapper = document.createElement('div');
     fiveDayWrapper.setAttribute('class', 'w-75 mt-4 float-end me-4');
 
     var fiveDayHeading = document.createElement('h3');
@@ -109,12 +107,14 @@ function createFiveDayForecastContainer() {
 
     document.body.append(fiveDayWrapper);
 
+    console.log('createFiveDayForecastContainer :>>', fiveDayWrapper);                             /** Delete this before submission */
+
     return fiveDayWrapper;
-}
+};
 
 createFiveDayForecastContainer();
 
-function createFiveDayForecastCard(day) {
+function createFiveDayForecastCard(day, i) {
     var fiveDayCardEl = document.createElement('div');
     fiveDayCardEl.setAttribute('class', 'col');
 
@@ -123,37 +123,45 @@ function createFiveDayForecastCard(day) {
 
     var fiveDayHeading = document.createElement('h5');
     fiveDayHeading.setAttribute('class', 'card-title text-light');
-    fiveDayHeading.textContent = day.list.dt + day.list.weather.icon;
+    fiveDayHeading.textContent = day.list[i].dt_txt;
+
+    var iconCode = day.list[i].weather[0].icon;
+
+    var iconURL = "http://openweathermap.org/img/w/" + iconCode + ".png";
+
+    var iconImg = document.createElement('img');
+    iconImg.src = iconURL;
 
     var fiveDayTemp = document.createElement('p');
     fiveDayTemp.setAttribute('class', 'card-text ps-1 my-3 text-light');
-    fiveDayTemp.textContent = 'Temp: ' + day.list.main.temp;
+    fiveDayTemp.textContent = 'Temp: ' + day.list[i].main.temp;
 
     var fiveDayWind = document.createElement('p');
     fiveDayWind.setAttribute('class', 'card-text ps-1 my-3 text-light');
-    fiveDayWind.textContent = 'Wind: ' + day.list.wind.speed;
+    fiveDayWind.textContent = 'Wind: ' + day.list[i].wind.speed;
 
     var fiveDayHumidity = document.createElement('p');
     fiveDayHumidity.setAttribute('class', 'card-text ps-1 my-3 text-light');
-    fiveDayHumidity.textContent = 'Humidity: ' + day.list.main.humidity;
+    fiveDayHumidity.textContent = 'Humidity: ' + day.list[i].main.humidity;
 
-    fiveDayBodyEl.append(fiveDayHeading, fiveDayTemp, fiveDayWind, fiveDayHumidity);
+    fiveDayBodyEl.append(fiveDayHeading, iconImg, fiveDayTemp, fiveDayWind, fiveDayHumidity);
 
     fiveDayCardEl.append(fiveDayBodyEl);
 
     return fiveDayCardEl;
-}
+};
 
 function renderFiveDayForecast(days) {
+    console.log('renderFiveDayForecast :>>', fiveDayWrapper);                           /** Delete this before submitting */
 
     // loop over days
-    for(var i = 1; i < 6; i++) {
+    for(var i = 1; i < 36; i +=8) {
         // create day cards
-        var dayCard = createFiveDayForecastCard(days[i]);
+        var dayCard = createFiveDayForecastCard(days, i);
         // append day cards to forecast container
         fiveDayWrapper.append(dayCard);
-    }
-}
+    };
+};
 
 
 // create a button from already searched cities
@@ -181,8 +189,6 @@ document.getElementById('search-btn').addEventListener('click', function(e) {
     // currently there may be a problem with the searchCity function which is causing the .then promise to not be read properly
     searchCity(inputEl.value);
     // createTodayForecast();
-    weatherSearch();
 });
 
-    useCurrentCity();
 
